@@ -1,9 +1,9 @@
-import moo from 'moo'
+import moo, { Token } from 'moo'
 
 type ActualObject = Record<string | number | symbol, unknown>
 type Value = string | number | true | false | null | Value[] | ActualObject
 
-type Parser<T> = (token: moo.Token, lexer: moo.Lexer) => T
+type Parser<T> = (token: Token, lexer: moo.Lexer) => T
 type Formatter<T> = (value: T, pretty: boolean) => string
 
 const tokenize = (source: string): moo.Lexer => {
@@ -36,6 +36,14 @@ const tokenize = (source: string): moo.Lexer => {
 }
 
 const parseFromLexer = (lexer: moo.Lexer): Value => {
+  const skipWhitespace = (token: Token, lexer: moo.Lexer): Token => {
+    while(token.type === 'WS' || token.type === 'NL') {
+      let temp = lexer.next()
+      if(!temp) return token
+      token = temp
+    }
+    return token
+  }
   const parseBoolean: Parser<boolean> = (token, lexer) => {
     return token.value === 'true'
   }
@@ -51,7 +59,7 @@ const parseFromLexer = (lexer: moo.Lexer): Value => {
   }
   const parseArray: Parser<Value[]> = (token, lexer) => {
     const values: Value[] = []
-    let tok = lexer.next()
+    let tok = skipWhitespace(lexer.next() as Token, lexer)
     if(!tok) return values
 
     while(tok.type !== 'rbracket') {
@@ -59,14 +67,15 @@ const parseFromLexer = (lexer: moo.Lexer): Value => {
       if(value === undefined) break
       values.push(value)
       // // The comma or rbracket
-      let temp = lexer.next() as moo.Token
+      let temp = skipWhitespace(lexer.next() as Token, lexer)
       if(temp?.type === 'rbracket') break
       if(temp?.type !== 'comma') {
         throw new Error(lexer.formatError(temp, `Expecting token comma, got token ${temp}`))
       }
       // The next value
-      tok = lexer.next()
-      if(!tok) break
+      let next = lexer.next()
+      if(!next) break
+      tok = skipWhitespace(next, lexer)
     }
 
     return values
@@ -75,6 +84,7 @@ const parseFromLexer = (lexer: moo.Lexer): Value => {
     const values: ActualObject = {}
     let tok = lexer.next()
     if(!tok) return values
+    tok = skipWhitespace(tok, lexer)
 
     while(tok.type !== 'rbrace') {
       if(tok.type !== 'string') {
@@ -82,25 +92,27 @@ const parseFromLexer = (lexer: moo.Lexer): Value => {
       }
       let key = parseString(tok, lexer)
       // The colon
-      let colon = lexer.next() as moo.Token
+      let colon = skipWhitespace(lexer.next() as Token, lexer)
       if(colon?.type !== 'colon') {
         throw new Error(lexer.formatError(colon, `Expected token colon, got token ${colon}`))
       }
 
-      tok = lexer.next()
-      if(tok === undefined) break
+      let val = lexer.next()
+      if(!val) break
+      tok = skipWhitespace(val, lexer)
       let value = parseValue(tok, lexer)
 
       values[key] = value
 
-      let temp = lexer.next() as moo.Token
+      let temp = skipWhitespace(lexer.next() as Token, lexer)
       if(temp?.type === 'rbrace') break
       if(temp?.type !== 'comma') {
         throw new Error(lexer.formatError(temp, `Expected token comma, got token ${token}`))
       }
       // The next value
-      tok = lexer.next()
-      if(!tok) break
+      let next = lexer.next()
+      if(!next) break
+      tok = skipWhitespace(next, lexer)
     }
     return values
   }

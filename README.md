@@ -1,6 +1,6 @@
 # `jason`
 
-`jason` is a JSON parser and formatter written in JavaScript. It's pretty simple (208 lines with comments and blank lines) and should be pretty fast. It uses [`moo`](https://github.com/no-context/moo) for lexing, and then iterates over that stream of tokens. It supports proper strings, floats, and some pretty errors. It's kinda pointless because `JSON.parse` exists, but interesting nonetheless.
+`jason` is a JSON parser and formatter written in JavaScript. It's pretty simple (220 lines with comments and blank lines) and should be pretty fast. It uses [`moo`](https://github.com/no-context/moo) for lexing, and then iterates over that stream of tokens. It supports proper strings, floats, and some pretty errors. It's kinda pointless because `JSON.parse` exists, but interesting nonetheless.
 
 ## install
 
